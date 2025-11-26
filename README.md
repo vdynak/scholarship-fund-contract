@@ -1,9 +1,9 @@
 # ScholarshipDis. – Decentralized Scholarship & Grant Distribution
 
 
-#First Pres Notes
-Consider a seed donor, or donor committee, at min. Seeded constructor 
-Hash out the voting threshold
+# First Pres Notes
+- Consider a seed donor, or donor committee, at min. Seeded constructor
+- Hash out the voting threshold
 
 
 ## Group Members
