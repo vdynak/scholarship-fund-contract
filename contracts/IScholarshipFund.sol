@@ -78,6 +78,7 @@ interface IScholarshipFund {
         external;
 
     /// @notice Finalizes an application and pays out the award if it passed.
+    /// NOTE: Add responsibility here so that only committee can finalize, review logic
     function finalize(uint256 applicationId)
         external;
 
