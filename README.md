@@ -1,4 +1,4 @@
-# ScholarshipFund – Decentralized Scholarship & Grant Distribution
+# ScholarshipDis. – Decentralized Scholarship & Grant Distribution
 
 ## Group Members
 
@@ -8,7 +8,7 @@
 
 ## Purpose of the Contract
 
-`ScholarshipFund` is a decentralized smart contract that manages scholarship or grant distribution without relying on a single trusted organization.
+`ScholarshipDis.` is a decentralized smart contract that manages scholarship or grant distribution without relying on a single trusted organization.
 
 The contract allows:
 
