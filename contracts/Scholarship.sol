@@ -245,6 +245,7 @@ contract Scholarship{
             roundWinner[currentRound]
         );
     }
+}
         
     
 
