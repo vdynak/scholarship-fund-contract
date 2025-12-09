@@ -39,6 +39,10 @@ contract Scholarship{
     // Structure: hasVoted[roundId][applicationId][voterAddress] => true/false
     mapping(uint256 => mapping(uint256 => mapping(address => bool))) public hasVoted;
 
+    // Tracks whether a given address has already applied in the current round.
+    // Prevents multiple applications from the same account.
+    mapping(uint256 => mapping(address => bool)) public hasApplied;
+
     // The currently active scholarship round.
     // Increments when the committee starts the next round.
     uint256 public currentRound;
@@ -65,6 +69,47 @@ contract Scholarship{
 
         emit NewRoundStarted(currentRound);
     }
+
+    // donation logic, seed = base, donators could contribute more
+    // anyone can donate ETH to the pool, requires a pos donation amount 
+    function donate() external payable{
+        require(msg.value > 0, "Donation must be > 0");
+        emit Donated(msg.sender, msg.value);
+    }
+
+    // fallback for plain ETH transfers where no func is called; so using wallet, or address(contract).transfer(amount), send() from another contract
+    receive() external payable{
+        require(msg.value > 0, "Donation must be > 0");
+        emit Donated(msg.sender, msg.value);
+    }
+
+    // app. logic itself, how to apply?
+    function apply(string calldata ipfsHash) external{
+        // constraint one: if a winner exists, no more apps could be submitted
+        require(!roundHasWinner[currentRound], "Round already closed");
+        // constraint two: prevent incomplete apps from being submitted
+        require(bytes(ipfsHash).length > 0, "ipfsHash cannot be empty");
+        require(!hasApplied[currentRound][msg.sender], "You have already applied this round");
+        
+        // take the number of apps already submitted and increment by 1
+        uint256 newID = applicationsCountByRound[currentRound] + 1;
+        applicationsCountByRound[currentRound] = newId;
+
+        applications[currentRound][newId] = Application([
+            id: newId,
+            applicant: msg.sender,
+            ipfsHash: ipfsHash,
+            voteCount: 0,
+            exists: true
+        });
+        hasApplied[currentRound][msg.sender] = true;
+        // public entry log 
+        emit ApplicationSubmitted(currentRound, newId, msg.sender, ipfsHash);
+    }
+
+    // voting logic next, winner = first to 10 votes in 3 days, if surpassed, then first to recieve the most amount of votes, in case of tie: ??
+
+    
 
 
     
