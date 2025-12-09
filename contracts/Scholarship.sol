@@ -150,6 +150,56 @@ contract Scholarship{
         app.voteCount ++;
         emit VoteCast(currentRound, appId, msg.sender);
     }
+
+    function selectWinner() external{
+        require(isCommittee[msg.sender], "Only committee can select winner");
+        require(phase == RoundPhase.Voting, "Voting not active");
+
+        // voting must be ove3r (after application + voting duration)
+        require(
+            block.timestamp > roundStartTime + applicationDuration + votingDuration,
+            "Voting period not finished"
+        );
+
+        uint256 totalApps = applicationsCountByRound[currentRound];
+        require(totalApps > 0, "No applications submitted");
+
+        uint256 winningAppId = 0;
+        uint256 highestVotes = 0;
+
+        for (uint256 i = 1; i <= totalApps; i++){
+            Application storage app = applications[currentRound][i];
+
+            // app with more votes, becomes the winner, ties auto handled as the first with the highest amount because for instance 2 will never be greater than 2, so first 2 vote app would win
+            if (app.voteCount > highestVotes){
+                highestVotes = app.voteCount;
+                winningAppId = i;
+            }
+            // ties: earlier app (lower appId) wins automatically
+        }
+
+        require(highestVotes > 0, "No votes cast this round");
+
+        // Winner struct
+        Application storage winner = applications[currentRound][winningAppId];
+        uint256 amount = address(this).balance;
+
+        require(amount > 0, "No funds available to award");
+
+        roundHasWinner[currentRound] = true;
+        roundWinner[currentRound] = winner.applicant;
+
+        phase = RoundPhase.Closed;
+
+        // transfer full balance; winner.applicant --> wallet addr of winner, "" --> empty data payload because we're not calling a func
+        // bool - success?, bytes --> not needed so _
+        (bool sent, ) = winner.applicant.call{value: amount}("");
+        / constraint: if winner addr is a contract that rejects, gas issue, balance mismatch, something --> the selectWinner() trans reverts, not recorded, funds still locked
+        require(sent, "Transfer failed");
+
+        emit WinnerSelected(currentRound, winner.applicant, amount);
+    }
+        
     
 
 
