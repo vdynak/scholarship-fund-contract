@@ -261,17 +261,3 @@ contract Scholarship{
         );
     }
 }
-        
-    
-
-
-    
-    
-
-    
-
-    
-
-
-
-    
