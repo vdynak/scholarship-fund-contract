@@ -90,7 +90,7 @@ contract Scholarship{
     }
 
     // app. logic itself, how to apply?
-    function apply(string calldata ipfsHash) external{
+    function applyfor(string calldata ipfsHash) external{
         // constraint one: if the app period has ended, no more apps could be submitted
         require(phase == RoundPhase.Applications, "Applications are not open");
         require(block.timestamp <= roundStartTime + applicationDuration, "Application period ended");
