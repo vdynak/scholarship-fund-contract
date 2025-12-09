@@ -12,7 +12,12 @@ contract Scholarship{
     mapping(address => bool) public isCommittee;
     uint256 public committeeCount;
     uint256 public requiredVotes;
-    uint256 public votingDuration = 3 days;
+    uint256 public applicationDuration = 3 days;
+    uint256 public votingDuration = 1 days;
+
+    // Round phases: applications open → voting open → round closed
+    enum RoundPhase{Applications, Voting, Closed}
+    RoundPhase public phase;
 
     // app data
     struct Applicatiion{
@@ -34,10 +39,8 @@ contract Scholarship{
     mapping(uint256 => bool) public roundHasWinner;
     mapping(uint256 => address) public roundWinner;
 
-    // Tracks whether a specific committee member has voted for a specific application in a specific round.
-    // Prevents double voting.
-    // Structure: hasVoted[roundId][applicationId][voterAddress] => true/false
-    mapping(uint256 => mapping(uint256 => mapping(address => bool))) public hasVoted;
+    // Tracks whether a committee member has already cast their single vote for this round
+    mapping(uint256 => mapping(address => bool)) public hasVotedThisRound;
 
     // Tracks whether a given address has already applied in the current round.
     // Prevents multiple applications from the same account.
@@ -54,6 +57,7 @@ contract Scholarship{
     constructor(address[] memory _committee, uint256 _requiredVotes) payable {
         require(_committee.length > 0, "Need at least one committee member");
         require(_requiredVotes > 0, "requiredVotes must be > 0");
+        require(_committee.length >= _requiredVotes, "Not enough committee to reach required votes");
         require(msg.value >= 0.01 ether, "Seed of at least 0.01 ETH required");
 
         for (uint256 i = 0; i < _committee.length; i++) {
@@ -66,6 +70,7 @@ contract Scholarship{
         requiredVotes = _requiredVotes;
         currentRound = 1;
         roundStartTime = block.timestamp;
+        phase = RoundPhase.Applications;
 
         emit NewRoundStarted(currentRound);
     }
@@ -85,9 +90,11 @@ contract Scholarship{
 
     // app. logic itself, how to apply?
     function apply(string calldata ipfsHash) external{
-        // constraint one: if a winner exists, no more apps could be submitted
-        require(!roundHasWinner[currentRound], "Round already closed");
+        // constraint one: if the app period has ended, no more apps could be submitted
+        require(phase == RoundPhase.Applications, "Applications are not open");
+        require(block.timestamp <= roundStartTime + applicationDuration, "Application period ended");
         // constraint two: prevent incomplete apps from being submitted
+        require(!isCommittee[msg.sender], "Committee members cannot apply");
         require(bytes(ipfsHash).length > 0, "ipfsHash cannot be empty");
         require(!hasApplied[currentRound][msg.sender], "You have already applied this round");
         
@@ -108,7 +115,30 @@ contract Scholarship{
     }
 
     // voting logic next, winner = first to 10 votes in 3 days, if surpassed, then first to recieve the most amount of votes, in case of tie: ??
+    function startVoting() external{
+    // will need as transition from app period to voting period
+    }
 
+    function vote(uint256 appId) external{
+        require(phase == RoundPhase.Voting, "Voting period is not active");
+        require(
+            block.timestamp <= roundStartTime + applicationDuration + votingDuration, 
+            "Voting period ended"
+        );
+        require(isCommittee[msg.sender], "Only committee can vote");
+        require(!hasVotedThisRound[currentRound][msg.sender], "You already voted this round");
+        // creates a pointer to the actual application struct in contract storage, when committee votes and we increment voteCount, change is saved permanently, avoid copying data.
+        // round 1
+        //    - app 1 --> (ipfsHash, applicant, voteCount, exists)
+        //    - app 2 --> (ipfsHash, applicant, voteCount, exists)
+        Application storage app = applications[currentRound][appId];
+        require(app.exists, "Application does not exist");
+
+        // vote happens here
+        hasVotedThisRound[currentRound][msg.sender] = true;
+        app.voteCount ++;
+        emit VoteCast(currentRound, appId, msg.sender);
+    }
     
 
 
