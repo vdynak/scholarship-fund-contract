@@ -242,7 +242,7 @@ contract Scholarship{
     function getRoundInfo()
         external
         view
-        returns(
+        returns (
             uint256 round,
             RoundPhase currentPhase,
             uint256 appsCount,
@@ -251,7 +251,7 @@ contract Scholarship{
             address winner
         )
     {
-        return(
+        return (
             currentRound,
             phase,
             applicationsCountByRound[currentRound],
